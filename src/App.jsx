@@ -1,29 +1,71 @@
+// App.js
+import React, { Component } from 'react';
 import './App.css';
+import NoteForm from './NoteForm';
+import NoteList from './NoteList';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.jsx</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
-    </div>
-  );
+class Aplikace extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      poznamky: [],
+      filtrovanePoznamky: [],
+      filtrovatKlicoveSlovo: ''
+    };
+  }
+
+  componentDidMount() {
+    const ulozenePoznamky = JSON.parse(localStorage.getItem('poznamky'));
+    if (ulozenePoznamky) {
+      this.setState({ poznamky: ulozenePoznamky });
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.poznamky !== this.state.poznamky || prevState.filtrovatKlicoveSlovo !== this.state.filtrovatKlicoveSlovo) {
+      localStorage.setItem('poznamky', JSON.stringify(this.state.poznamky));
+      if (this.state.filtrovatKlicoveSlovo) {
+        const filtrovane = this.state.poznamky.filter(poznamka =>
+          poznamka.text.toLowerCase().includes(this.state.filtrovatKlicoveSlovo.toLowerCase())
+        );
+        this.setState({ filtrovanePoznamky: filtrovane });
+      } else {
+        this.setState({ filtrovanePoznamky: this.state.poznamky });
+      }
+    }
+  }
+
+  pridejPoznamku = (text) => {
+    const novaPoznamka = {
+      id: Math.random(),
+      text: text
+    };
+    this.setState({ poznamky: [...this.state.poznamky, novaPoznamka] });
+  };
+
+  smazPoznamku = (id) => {
+    this.setState({ poznamky: this.state.poznamky.filter(poznamka => poznamka.id !== id) });
+  };
+
+  zmenaFiltrace = (text) => {
+    this.setState({ filtrovatKlicoveSlovo: text });
+  };
+
+  render() {
+    return (
+      <div className="Aplikace">
+        <h1>Poznámky</h1>
+        <NoteForm pridejPoznamku={this.pridejPoznamku} />
+        <input 
+          type="text" 
+          placeholder="Filtrovat poznámky" 
+          value={this.state.filtrovatKlicoveSlovo} 
+          onChange={(e) => this.zmenaFiltrace(e.target.value)} 
+        />
+        <NoteList poznamky={this.state.filtrovanePoznamky} smazPoznamku={this.smazPoznamku} />
+      </div>
+    );
+  }
 }
 
-export default App;
+export default Aplikace;
